@@ -4,3 +4,4 @@ mysql-connector-python
 pydantic
 python-dotenv
 sqlglot
+google-genai

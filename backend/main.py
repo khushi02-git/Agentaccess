@@ -4,6 +4,7 @@ from backend.routes.auth import router as auth_router
 from backend.routes.query import router as query_router
 from backend.routes.audit import router as audit_router
 from backend.routes.dashboard import router as dashboard_router
+from backend.routes.gemini import router as gemini_router
 
 
 app = FastAPI(
@@ -21,6 +22,7 @@ app.include_router(auth_router)
 app.include_router(query_router)
 app.include_router(audit_router)
 app.include_router(dashboard_router)
+app.include_router(gemini_router)
 
 
 # -------------------------

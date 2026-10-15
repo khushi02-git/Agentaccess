@@ -1,9 +1,9 @@
 from fastapi import FastAPI
 
-from routes.auth import router as auth_router
-from routes.query import router as query_router
-from routes.audit import router as audit_router
-from routes.dashboard import router as dashboard_router
+from backend.routes.auth import router as auth_router
+from backend.routes.query import router as query_router
+from backend.routes.audit import router as audit_router
+from backend.routes.dashboard import router as dashboard_router
 
 
 app = FastAPI(
@@ -46,3 +46,4 @@ def health():
     return {
         "status": "healthy"
     }
+

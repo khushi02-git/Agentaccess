@@ -1,0 +1,124 @@
+
+@import "tailwindcss";
+
+:root {
+  --background: #000000;       /* slate-950 */
+  --foreground: #f1f5f9;       /* slate-100 */
+  --card: #0a0a0a;             /* slate-900 */
+  --muted: #141414;            /* slate-800 */
+  --muted-foreground: #a3a3a3; /* slate-400 */
+  --border: #262626;           /* slate-700 */
+  --primary: #22c55e;          /* cyan-400 */
+  --primary-foreground: #020617;
+  --accent: #14532d;           /* cyan-800 */
+  --ring: #22c55e;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-ring: var(--ring);
+}
+
+@layer base {
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+  }
+}
+
+@font-face {
+  font-family: "Geist Pixel Square";
+  src: url("../node_modules/geist/dist/fonts/geist-pixel/GeistPixel-Square.woff2") format("woff2");
+  font-display: swap;
+}
+@font-face {
+  font-family: "Geist Pixel Grid";
+  src: url("../node_modules/geist/dist/fonts/geist-pixel/GeistPixel-Grid.woff2") format("woff2");
+  font-display: swap;
+}
+@font-face {
+  font-family: "Geist Pixel Circle";
+  src: url("../node_modules/geist/dist/fonts/geist-pixel/GeistPixel-Circle.woff2") format("woff2");
+  font-display: swap;
+}
+@font-face {
+  font-family: "Geist Pixel Triangle";
+  src: url("../node_modules/geist/dist/fonts/geist-pixel/GeistPixel-Triangle.woff2") format("woff2");
+  font-display: swap;
+}
+@font-face {
+  font-family: "Geist Pixel Line";
+  src: url("../node_modules/geist/dist/fonts/geist-pixel/GeistPixel-Line.woff2") format("woff2");
+  font-display: swap;
+}
+
+@theme {
+  --font-pixel-square: "Geist Pixel Square", monospace;
+  --font-pixel-grid: "Geist Pixel Grid", monospace;
+  --font-pixel-circle: "Geist Pixel Circle", monospace;
+  --font-pixel-triangle: "Geist Pixel Triangle", monospace;
+  --font-pixel-line: "Geist Pixel Line", monospace;
+}
+
+.pixel-font {
+  font-family: "Press Start 2P", monospace;
+  -webkit-font-smoothing: none;
+  text-rendering: optimizeSpeed;
+  line-height: 1.5;
+}
+.pixel-card {
+  --c: #22c55e;          /* border */
+  --s: #14532d;          /* offset shadow */
+  position: relative;
+  margin: 4px;
+  background: #0a0a0a;
+  padding: 20px;
+  box-shadow:
+    0 -4px 0 0 var(--c), 0 4px 0 0 var(--c),
+    -4px 0 0 0 var(--c), 4px 0 0 0 var(--c),
+    8px 12px 0 0 var(--s);
+  transition: transform .1s steps(2), box-shadow .1s steps(2);
+}
+.pixel-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow:
+    0 -4px 0 0 var(--c), 0 4px 0 0 var(--c),
+    -4px 0 0 0 var(--c), 4px 0 0 0 var(--c),
+    12px 16px 0 0 var(--s);
+}
+.pixel-card.danger { --c: #ef4444; --s: #7f1d1d; }
+
+/* segmented progress bar */
+.pixel-bar {
+  height: 16px;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 12px, #0a0a0a 12px 16px),
+    linear-gradient(#22c55e, #22c55e);
+  background-size: 100% 100%, var(--w, 50%) 100%;
+  background-repeat: no-repeat;
+  background-color: #1a1a1a;
+}
+
+.pixel-card.soft {
+  margin: 2px;
+  padding: 16px;
+  box-shadow:
+    0 -2px 0 0 var(--c), 0 2px 0 0 var(--c),
+    -2px 0 0 0 var(--c), 2px 0 0 0 var(--c),
+    4px 6px 0 0 var(--s);
+}
+.pixel-card.soft:hover {
+  transform: none;
+  box-shadow:
+    0 -2px 0 0 var(--c), 0 2px 0 0 var(--c),
+    -2px 0 0 0 var(--c), 2px 0 0 0 var(--c),
+    6px 8px 0 0 var(--s);
+}

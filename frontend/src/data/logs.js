@@ -1,0 +1,14 @@
+export const logs = [
+    { id: "log-001", profileId: "prf-readwrite", profile: "Read-write", action: "SELECT", query: "SELECT * FROM orders WHERE status='pending'", decision: "allowed", status: "success", reason: null, timestamp: "2026-10-09T10:42:00Z" },
+    { id: "log-002", profileId: "prf-readonly", profile: "Read-only", action: "SELECT", query: "SELECT region, SUM(total) FROM sales GROUP BY region", decision: "allowed", status: "success", reason: null, timestamp: "2026-10-09T10:40:12Z" },
+    { id: "log-003", profileId: "prf-readonly", profile: "Read-only", action: "UPDATE", query: "UPDATE sales SET total=0", decision: "blocked", status: "blocked", reason: "Profile read-only cannot run UPDATE", timestamp: "2026-10-09T10:38:47Z" },
+    { id: "log-004", profileId: "prf-readwrite", profile: "Read-write", action: "INSERT", query: "INSERT INTO customers (name, email) VALUES ('A','a@x.com')", decision: "allowed", status: "success", reason: null, timestamp: "2026-10-09T10:31:05Z" },
+    { id: "log-005", profileId: "prf-admin", profile: "Admin", action: "DELETE", query: "DELETE FROM users", decision: "blocked", status: "blocked", reason: "DELETE without WHERE clause", timestamp: "2026-10-09T09:58:31Z" },
+    { id: "log-006", profileId: "prf-admin", profile: "Admin", action: "DROP", query: "DROP TABLE audit_log", decision: "blocked", status: "blocked", reason: "DROP is not permitted for any profile", timestamp: "2026-10-09T09:57:10Z" },
+    { id: "log-007", profileId: "prf-readonly", profile: "Read-only", action: "SELECT", query: "SELECT * FROM information_schema.tables", decision: "allowed", status: "success", reason: null, timestamp: "2026-10-09T08:15:00Z" },
+    { id: "log-008", profileId: "prf-readwrite", profile: "Read-write", action: "UPDATE", query: "UPDATE orders SET status='shipped' WHERE id=482", decision: "allowed", status: "failed", reason: "Deadlock detected, retry needed", timestamp: "2026-10-09T07:44:19Z" },
+    { id: "log-009", profileId: "prf-readonly", profile: "Read-only", action: "SELECT", query: "SELECT * FROM customers", decision: "allowed", status: "success", reason: null, timestamp: "2026-10-09T06:00:45Z" },
+    { id: "log-010", profileId: "prf-admin", profile: "Admin", action: "DELETE", query: "DELETE FROM sessions WHERE expired=1", decision: "allowed", status: "success", reason: null, timestamp: "2026-10-09T05:30:02Z" },
+    { id: "log-011", profileId: "prf-readwrite", profile: "Read-write", action: "DELETE", query: "DELETE FROM orders WHERE id=12", decision: "blocked", status: "blocked", reason: "Profile read-write cannot run DELETE", timestamp: "2026-10-09T09:12:40Z" },
+    { id: "log-012", profileId: "prf-readonly", profile: "Read-only", action: "SELECT", query: "SELECT * FROM users WHERE id=1 OR 1=1; --", decision: "blocked", status: "blocked", reason: "Injection pattern detected", timestamp: "2026-10-09T08:47:03Z" },
+];

@@ -1,16 +1,36 @@
-# React + Vite
+# AgentAccess Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Web dashboard for monitoring and controlling an AI agent that interacts with databases and system resources.
 
-Currently, two official plugins are available:
+> **Status:** Phase 1 - static demo using dummy data shaped like the future API responses. Backend integration is next.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Pages
 
-## React Compiler
+- **Dashboard**: overview of agent activity and key stats
+- **Agent**: agent state and active permission profile
+- **System Monitor**: CPU, memory and resource usage
+- **Logs**: query logs with search and filters
+- **Audit Trail**: full event stream with event-type filter
+- **Violations**: triage view with severity and status
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Tech stack
 
-## Expanding the Oxlint configuration
+React, Vite, Tailwind CSS v4, React Router, Recharts, Lucide icons, Motion. Linting with Oxlint.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+## Run locally
+
+Requires Node.js.
+
+    cd frontend
+    npm install
+    npm run dev
+
+Open http://localhost:5173
+
+## Project structure
+
+    src/
+      components/   reusable UI pieces
+      data/         dummy data (replaced by FastAPI calls later)
+      layout/       app shell and sidebar
+      pages/        one file per page

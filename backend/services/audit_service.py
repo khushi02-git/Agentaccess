@@ -1,4 +1,4 @@
-from database import get_db_connection
+from backend.database import get_db_connection
 
 
 def create_audit_log(

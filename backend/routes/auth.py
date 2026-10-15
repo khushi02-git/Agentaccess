@@ -1,12 +1,12 @@
 from fastapi import APIRouter
-from schemas import (
+from backend.schemas import (
     LoginRequest,
     LoginResponse,
     AuthorizationRequest,
     AuthorizationResponse
 )
 
-from services.auth_service import (
+from backend.services.auth_service import (
     authenticate_user,
     authorize_request
 )

@@ -1,19 +1,19 @@
 from fastapi import APIRouter, HTTPException
 
-from schemas import (
+from backend.schemas import (
     QueryRequest,
     QueryValidationResponse,
     QueryExecutionResponse
 )
 
-from services.query_service import (
+from backend.services.query_service import (
     validate_query,
     get_action
 )
 
-from services.auth_service import authorize_request
-from services.audit_service import create_audit_log
-from database import get_db_connection
+from backend.services.auth_service import authorize_request
+from backend.services.audit_service import create_audit_log
+from backend.database import get_db_connection
 
 
 router = APIRouter(

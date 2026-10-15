@@ -1,7 +1,7 @@
 from fastapi import APIRouter
-from database import get_db_connection
+from backend.database import get_db_connection
 
-from schemas import DashboardStats
+from backend.schemas import DashboardStats
 
 
 router = APIRouter(

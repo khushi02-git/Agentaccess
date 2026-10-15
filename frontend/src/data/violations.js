@@ -1,0 +1,7 @@
+export const violations = [
+  { id: "vio-001", logId: "log-003", profileId: "prf-readonly", profile: "Read-only", type: "PERMISSION_DENIED", severity: "medium", status: "open", query: "UPDATE sales SET total=0", rule: "Profile read-only cannot run UPDATE", timestamp: "2026-10-09T10:38:47Z" },
+  { id: "vio-002", logId: "log-005", profileId: "prf-admin", profile: "Admin", type: "UNSAFE_QUERY", severity: "high", status: "acknowledged", query: "DELETE FROM users", rule: "DELETE without WHERE clause", timestamp: "2026-10-09T09:58:31Z" },
+  { id: "vio-003", logId: "log-006", profileId: "prf-admin", profile: "Admin", type: "FORBIDDEN_OPERATION", severity: "critical", status: "open", query: "DROP TABLE audit_log", rule: "DROP is not permitted for any profile", timestamp: "2026-10-09T09:57:10Z" },
+  { id: "vio-004", logId: "log-011", profileId: "prf-readwrite", profile: "Read-write", type: "PERMISSION_DENIED", severity: "medium", status: "resolved", query: "DELETE FROM orders WHERE id=12", rule: "Profile read-write cannot run DELETE", timestamp: "2026-10-09T09:12:40Z" },
+  { id: "vio-005", logId: "log-012", profileId: "prf-readonly", profile: "Read-only", type: "SQL_INJECTION", severity: "critical", status: "open", query: "SELECT * FROM users WHERE id=1 OR 1=1; --", rule: "Injection pattern detected", timestamp: "2026-10-09T08:47:03Z" },
+];

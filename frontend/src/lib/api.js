@@ -76,6 +76,24 @@ export async function executeQuery(agentId, query) {
   return payload;
 }
 
+export async function checkAuthorization(agentId, action, resource) {
+  const payload = await postJson("/auth/authorize", {
+    agent_id: agentId,
+    action,
+    resource,
+  });
+  const valid =
+    typeof payload.authorized === "boolean" &&
+    (payload.role === null || typeof payload.role === "string") &&
+    (payload.permission === null || typeof payload.permission === "string") &&
+    typeof payload.reason === "string";
+
+  if (!valid) {
+    throw new Error("The backend returned an invalid authorization response.");
+  }
+  return payload;
+}
+
 function isNumber(value) {
   return typeof value === "number" && Number.isFinite(value);
 }

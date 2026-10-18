@@ -7,6 +7,7 @@ import {
   ScrollText,
   History,
   ShieldAlert,
+  ShieldCheck,
 } from "lucide-react";
 import { Sidebar, SidebarBody, SidebarLink } from "../components/ui/sidebar";
 
@@ -19,6 +20,7 @@ const links = [
   { label: "Logs", to: "/logs", icon: <ScrollText className={icon} /> },
   { label: "Audit Trail", to: "/audit", icon: <History className={icon} /> },
   { label: "Violations", to: "/violations", icon: <ShieldAlert className={icon} /> },
+  { label: "RBAC", to: "/rbac", icon: <ShieldCheck className={icon} /> },
 ];
 
 export default function AppLayout() {

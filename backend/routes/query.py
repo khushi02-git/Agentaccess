@@ -12,7 +12,7 @@ from backend.services.query_service import (
 )
 
 from backend.services.auth_service import authorize_request
-from backend.services.audit_service import create_audit_log
+from backend.services.audit_service import append_audit_event, create_audit_log
 from backend.database import get_db_connection
 
 
@@ -28,7 +28,27 @@ router = APIRouter(
 )
 def validate(request: QueryRequest):
 
-    result = validate_query(request.query)
+    try:
+        result = validate_query(request.query)
+    except Exception:
+        append_audit_event(
+            "ERROR",
+            "FAILED",
+            agent_id=request.agent_id,
+            action="VALIDATE",
+            query=request.query,
+            message="Query validation failed",
+        )
+        raise
+    append_audit_event(
+        "VALIDATION",
+        "PASSED" if result["valid"] else "BLOCKED",
+        agent_id=request.agent_id,
+        action=result["action"],
+        query=request.query,
+        risk_level=result["risk_level"],
+        message=result["reason"],
+    )
 
     return QueryValidationResponse(**result)
 
@@ -43,7 +63,18 @@ def execute(request: QueryRequest):
     # 1. Validate query
     # --------------------------------
 
-    validation = validate_query(request.query)
+    try:
+        validation = validate_query(request.query)
+    except Exception:
+        append_audit_event(
+            "ERROR",
+            "FAILED",
+            agent_id=request.agent_id,
+            action="VALIDATE",
+            query=request.query,
+            message="Query validation failed",
+        )
+        raise
 
     action = validation["action"]
 
@@ -56,6 +87,26 @@ def execute(request: QueryRequest):
         action,
         "database"
     )
+    append_audit_event(
+        "RBAC",
+        "ALLOWED" if authorization["authorized"] else "DENIED",
+        agent_id=request.agent_id,
+        role=authorization.get("role"),
+        action=action,
+        query=request.query,
+        message=authorization["reason"],
+    )
+
+    append_audit_event(
+        "VALIDATION",
+        "PASSED" if validation["valid"] else "BLOCKED",
+        agent_id=request.agent_id,
+        role=authorization.get("role"),
+        action=action,
+        query=request.query,
+        risk_level=validation["risk_level"],
+        message=validation["reason"],
+    )
 
     # --------------------------------
     # 3. Stop if validation fails
@@ -63,6 +114,26 @@ def execute(request: QueryRequest):
 
     if not validation["valid"]:
 
+        append_audit_event(
+            "QUERY",
+            "BLOCKED",
+            agent_id=request.agent_id,
+            role=authorization.get("role"),
+            action=action,
+            query=request.query,
+            risk_level=validation["risk_level"],
+            message=validation["reason"],
+        )
+        append_audit_event(
+            "SECURITY",
+            "BLOCKED",
+            agent_id=request.agent_id,
+            role=authorization.get("role"),
+            action=action,
+            query=request.query,
+            risk_level=validation["risk_level"],
+            message=validation["reason"],
+        )
         create_audit_log(
             request.agent_id,
             None,
@@ -82,6 +153,26 @@ def execute(request: QueryRequest):
 
     if not authorization["authorized"]:
 
+        append_audit_event(
+            "QUERY",
+            "BLOCKED",
+            agent_id=request.agent_id,
+            role=authorization.get("role"),
+            action=action,
+            query=request.query,
+            risk_level=validation["risk_level"],
+            message=authorization["reason"],
+        )
+        append_audit_event(
+            "SECURITY",
+            "BLOCKED",
+            agent_id=request.agent_id,
+            role=authorization.get("role"),
+            action=action,
+            query=request.query,
+            risk_level=validation["risk_level"],
+            message=authorization["reason"],
+        )
         create_audit_log(
             request.agent_id,
             None,
@@ -103,6 +194,24 @@ def execute(request: QueryRequest):
 
     if connection is None:
 
+        append_audit_event(
+            "QUERY",
+            "FAILED",
+            agent_id=request.agent_id,
+            role=authorization.get("role"),
+            action=action,
+            query=request.query,
+            risk_level=validation["risk_level"],
+            message="Database connection failed",
+        )
+        append_audit_event(
+            "ERROR",
+            "FAILED",
+            agent_id=request.agent_id,
+            action=action,
+            query=request.query,
+            message="Database connection failed",
+        )
         raise HTTPException(
             status_code=500,
             detail="Database connection failed"
@@ -119,7 +228,6 @@ def execute(request: QueryRequest):
         if action == "SELECT":
             result = cursor.fetchall()
         else:
-            connection.commit()
             result = f"{cursor.rowcount} row(s) affected"
 
         # --------------------------------
@@ -156,6 +264,17 @@ def execute(request: QueryRequest):
             "ALLOWED",
             "Query executed successfully"
         )
+        append_audit_event(
+            "QUERY",
+            "SUCCESS",
+            agent_id=request.agent_id,
+            role=authorization.get("role"),
+            action=action,
+            query=request.query,
+            risk_level=validation["risk_level"],
+            message="Query executed successfully",
+            request_id=request_id,
+        )
 
         return QueryExecutionResponse(
             success=True,
@@ -168,6 +287,24 @@ def execute(request: QueryRequest):
 
         connection.rollback()
 
+        append_audit_event(
+            "QUERY",
+            "FAILED",
+            agent_id=request.agent_id,
+            role=authorization.get("role"),
+            action=action,
+            query=request.query,
+            risk_level=validation["risk_level"],
+            message=str(e),
+        )
+        append_audit_event(
+            "ERROR",
+            "FAILED",
+            agent_id=request.agent_id,
+            action=action,
+            query=request.query,
+            message=str(e),
+        )
         create_audit_log(
             request.agent_id,
             None,

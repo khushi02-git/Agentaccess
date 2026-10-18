@@ -1,106 +1,128 @@
-import {
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-} from "recharts";
-import StatusBadge from "../components/StatusBadge";
-import { systemStats, systemHistory, processes } from "../data/systemStats";
+import { useEffect, useState } from "react";
 import PixelCard from "../components/PixelCard";
+import { fetchSystemStats } from "../lib/api";
 
-function formatUptime(seconds) {
-  const d = Math.floor(seconds / 86400);
-  const h = Math.floor((seconds % 86400) / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  return `${d}d ${h}h ${m}m`;
-}
-
-
+const REFRESH_INTERVAL_MS = 10000;
 
 export default function SystemMonitor() {
-  const { cpuPercent, memory, disk, uptimeSeconds } = systemStats;
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+
+    const refresh = async () => {
+      try {
+        const nextStats = await fetchSystemStats();
+        if (active) {
+          setStats(nextStats);
+          setError("");
+        }
+      } catch (requestError) {
+        if (active) {
+          setError(requestError.message);
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+
+    refresh();
+    const interval = window.setInterval(refresh, REFRESH_INTERVAL_MS);
+
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, []);
 
   return (
     <div className="space-y-6">
       <h1 className="pixel-font text-[24px] text-white">System Monitor</h1>
 
-      <div className="grid gap-8 sm:grid-cols-2 xl:grid-cols-4">
-        <PixelCard
-          label="CPU"
-          value={`${cpuPercent}%`}
-          percent={cpuPercent}
-          sub="Overall utilization"
-        />
-        <PixelCard
-          label="Memory"
-          value={`${memory.percent}%`}
-          percent={memory.percent}
-          sub={`${memory.usedGB} / ${memory.totalGB} GB`}
-        />
-        <PixelCard
-          label="Disk"
-          value={`${disk.percent}%`}
-          percent={disk.percent}
-          sub={`${disk.usedGB} / ${disk.totalGB} GB`}
-        />
-        <PixelCard
-          label="Uptime"
-          value={formatUptime(uptimeSeconds)}
-          sub="Since last restart"
-        />
-      </div>
+      {loading && !stats && (
+        <p className="text-sm text-muted-foreground">Loading system metrics…</p>
+      )}
 
-      <div className="rounded-lg border border-border bg-card p-5">
-        <div className="mb-4 text-sm font-medium">CPU and memory over time</div>
-        <div className="h-64">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={systemHistory}>
-              <CartesianGrid stroke="#262626" strokeDasharray="3 3" />
-              <XAxis dataKey="time" stroke="#a3a3a3" tick={{ fontSize: 12 }} />
-              <YAxis domain={[0, 100]} stroke="#a3a3a3" tick={{ fontSize: 12 }} unit="%" />
-              <Tooltip
-                contentStyle={{ background: "#0a0a0a", border: "1px solid #262626", borderRadius: 8 }}
-                labelStyle={{ color: "#ffffff" }}
-              />
-              <Legend />
-              <Line type="monotone" dataKey="cpu" name="CPU" stroke="#22c55e" strokeWidth={2} dot={false} />
-              <Line type="monotone" dataKey="memory" name="Memory" stroke="#ffffff" strokeWidth={2} dot={false} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
+      {error && (
+        <p role="alert" className="rounded-lg border border-red-500/50 bg-red-500/10 p-3 text-sm text-red-400">
+          {stats ? `Could not refresh metrics: ${error}` : error}
+        </p>
+      )}
 
-      <div className="rounded-lg border border-border bg-card">
-        <div className="border-b border-border px-5 py-3 text-sm font-medium">Processes</div>
-        <table className="w-full text-left text-sm">
-          <thead className="text-xs text-muted-foreground">
-            <tr className="border-b border-border">
-              <th className="px-5 py-2 font-medium">PID</th>
-              <th className="px-5 py-2 font-medium">Name</th>
-              <th className="px-5 py-2 font-medium">CPU %</th>
-              <th className="px-5 py-2 font-medium">Memory (MB)</th>
-              <th className="px-5 py-2 font-medium">Status</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {processes.map((p) => (
-              <tr key={p.pid}>
-                <td className="px-5 py-3 font-mono text-xs text-muted-foreground">{p.pid}</td>
-                <td className="px-5 py-3">{p.name}</td>
-                <td className="px-5 py-3">{p.cpuPercent}</td>
-                <td className="px-5 py-3">{p.memoryMB}</td>
-                <td className="px-5 py-3">
-                  <StatusBadge status={p.status} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {stats && (
+        <>
+          <div className="grid gap-8 sm:grid-cols-2 xl:grid-cols-3">
+            <PixelCard
+              label="CPU"
+              value={`${stats.cpu_percent}%`}
+              percent={stats.cpu_percent}
+              sub="Overall utilization"
+            />
+            <PixelCard
+              label="Memory"
+              value={`${stats.ram.percent}%`}
+              percent={stats.ram.percent}
+              sub={`${stats.ram.used_gb} / ${stats.ram.total_gb} GB`}
+            />
+            <PixelCard
+              label="Disk"
+              value={`${stats.disk.percent}%`}
+              percent={stats.disk.percent}
+              sub="Used space"
+            />
+          </div>
+
+          <p className="text-xs text-muted-foreground">
+            Metrics sampled {new Date(stats.timestamp).toLocaleString()}
+          </p>
+
+          <div className="rounded-lg border border-border bg-card">
+            <div className="border-b border-border px-5 py-3 text-sm font-medium">
+              Processes
+            </div>
+            {stats.processes.length === 0 ? (
+              <p className="px-5 py-8 text-center text-sm text-muted-foreground">
+                No process data is currently available.
+              </p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="text-xs text-muted-foreground">
+                    <tr className="border-b border-border">
+                      <th className="px-5 py-2 font-medium">PID</th>
+                      <th className="px-5 py-2 font-medium">Name</th>
+                      <th className="px-5 py-2 font-medium">CPU %</th>
+                      <th className="px-5 py-2 font-medium">Memory (MB)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {stats.processes.map((process) => (
+                      <tr key={process.pid}>
+                        <td className="px-5 py-3 font-mono text-xs text-muted-foreground">
+                          {process.pid}
+                        </td>
+                        <td className="px-5 py-3">{process.name}</td>
+                        <td className="px-5 py-3">{process.cpu_percent}</td>
+                        <td className="px-5 py-3">{process.memory_mb}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {!loading && !stats && !error && (
+        <p className="text-sm text-muted-foreground">
+          System metrics are not currently available.
+        </p>
+      )}
     </div>
   );
 }

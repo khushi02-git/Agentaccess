@@ -2,6 +2,7 @@
 .env
 .env.*
 !.env.example
+backend/audit_logs.jsonl
 
 # Python cache files
 __pycache__/

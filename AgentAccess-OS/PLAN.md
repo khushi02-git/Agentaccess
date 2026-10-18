@@ -40,9 +40,9 @@ React cannot read CPU, RAM or processes itself. This module runs on the machine,
 | D | Per-role limits, sustained-threshold check, enforcement (terminate), violation records | Done |
 | E | Per-request tracking around Gemini calls (query, decision, tokens, latency) | Planned |
 | F | Docker/cgroups hard limits (`--cpus`, `--memory`), network and file restrictions | Planned (Docker not installed yet) |
-| G | FastAPI endpoints and live dashboard pages | Planned (Phase 2 integration) |
+| G | FastAPI endpoints and live dashboard pages | OS monitoring endpoints integrated; frontend integration remains planned |
 
-**Phase 1 decision:** the OS module runs standalone and the frontend uses dummy data in the same shape. Integration comes in Phase 2.
+**Current integration status:** the OS module remains independently runnable, and the backend now exposes its system statistics and audit events over HTTP. The frontend continues to use dummy data until its integration phase.
 
 ## 4. Requirements
 
@@ -56,7 +56,7 @@ React cannot read CPU, RAM or processes itself. This module runs on the machine,
 | R6 | Every start, violation and stop is written to an append-only log by the running code (not entered by hand) | Done |
 | R7 | Agent actions (query, decision, tokens, latency) are logged per request | Phase E |
 | R8 | Hard limits and isolation through containers | Phase F |
-| R9 | Data available over HTTP for the dashboard | Phase G |
+| R9 | Data available over HTTP for the dashboard | Done for OS statistics and events; frontend integration remains planned |
 
 ## 5. Data contracts
 
@@ -153,17 +153,18 @@ Written by `log_event()` in `monitor/audit_log.py` to `logs/audit.jsonl` (JSON L
 | `read_events(limit=None)` | list of log records (5.4), newest last |
 | `monitor_agent(agent_id, role, ...)` | runs and monitors one agent until it finishes or breaks a limit |
 
-**Proposed endpoints (not yet agreed with the FastAPI member):**
+**FastAPI endpoints:**
 
 | Endpoint | Returns |
 |---|---|
-| `GET /api/system/stats` | 5.1 |
-| `GET /api/events` | list of 5.4 records, with optional `?event=violation` filter |
-| `GET /api/health` | already exists on the backend |
+| `GET /api/system/stats` | The system statistics object in 5.1; served from a background-refreshed cache. Returns HTTP 503 until the first successful sample. |
+| `GET /api/events?limit=100&event=violation` | `{"events": [...]}` containing the newest matching records in the 5.4 shape. `limit` is 1–1000 and `event` is optional. Malformed JSONL is reported as an error, not silently skipped. |
 
 **Notes for integration:**
 
-- `get_system_stats()` takes about 2 seconds because it samples CPU over time. For the API it should run in a background task that refreshes a cached value, so the endpoint answers instantly.
+- `get_system_stats()` takes about 2 seconds because it samples CPU over time. FastAPI refreshes a cache in a lifecycle-managed background task so requests do not wait for sampling.
+- The backend loads the standalone OS functions from their file paths in one adapter service; it does not add the hyphenated `AgentAccess-OS` directory to `sys.path`.
+- `psutil` is installed through the root backend requirements as well as the OS module's requirements.
 - The frontend runs on port 5173 and the API on 8000, so the backend needs CORS enabled for the dashboard.
 - The Gemini API key must live only in the backend, as an environment variable, never in React code.
 - The log file is read whole on each call. That is fine for a demo, and a database table would replace it later.

@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Any, Optional
 
 
 # -------------------------
@@ -80,3 +80,41 @@ class SystemMonitor(BaseModel):
     disk_usage: float
     process_count: int
     timestamp: str
+
+
+class SystemRam(BaseModel):
+    total_gb: float
+    used_gb: float
+    percent: float
+
+
+class SystemDisk(BaseModel):
+    percent: float
+
+
+class SystemProcess(BaseModel):
+    pid: int
+    name: str
+    cpu_percent: float
+    memory_mb: float
+
+
+class SystemStatsResponse(BaseModel):
+    cpu_percent: float
+    ram: SystemRam
+    disk: SystemDisk
+    timestamp: str
+    processes: list[SystemProcess]
+
+
+class OSEvent(BaseModel):
+    id: int
+    timestamp: str
+    event: str
+    agent_id: int | str
+    role: str
+    details: dict[str, Any]
+
+
+class OSEventsResponse(BaseModel):
+    events: list[dict[str, Any]]

@@ -9,4 +9,12 @@ export default defineConfig({
     oxlint(),
     tailwindcss(),
   ],
+  server: {
+    proxy: {
+      '/api': 'http://127.0.0.1:8000',
+      '/auth': 'http://127.0.0.1:8000',
+      '/gemini': 'http://127.0.0.1:8000',
+      '/query': 'http://127.0.0.1:8000',
+    },
+  },
 })

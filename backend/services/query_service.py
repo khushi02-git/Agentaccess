@@ -37,7 +37,7 @@ def get_action(query: str) -> str:
 
 
 def validate_query(query: str):
-    """Perform preliminary SQL operation validation."""
+    """Validate supported SQL operations and block unrestricted writes."""
     action = get_action(query)
 
     if action == "UNKNOWN":
@@ -46,6 +46,23 @@ def validate_query(query: str):
             "risk_level": "HIGH",
             "action": action,
             "reason": "Invalid, ambiguous, or unsupported SQL statement"
+        }
+
+    statement = sqlglot.parse_one(query, read="mysql")
+    if action == "DELETE" and statement.args.get("where") is None:
+        return {
+            "valid": False,
+            "risk_level": "HIGH",
+            "action": action,
+            "reason": "Unrestricted DELETE without a WHERE clause is blocked"
+        }
+
+    if action == "UPDATE" and statement.args.get("where") is None:
+        return {
+            "valid": False,
+            "risk_level": "HIGH",
+            "action": action,
+            "reason": "Unrestricted UPDATE without a WHERE clause is blocked"
         }
 
     if action not in ALLOWED_OPERATIONS:

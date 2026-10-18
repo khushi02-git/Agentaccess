@@ -5,3 +5,4 @@ pydantic
 python-dotenv
 sqlglot
 google-genai
+psutil==7.2.2

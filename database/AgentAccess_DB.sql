@@ -78,6 +78,26 @@ CREATE TABLE IF NOT EXISTS Employees (
 );
 
 -- =========================
+-- CONTRACTORS
+-- =========================
+CREATE TABLE IF NOT EXISTS Contractors (
+    contractor_id INT PRIMARY KEY AUTO_INCREMENT,
+    contractor_name VARCHAR(100) NOT NULL,
+    department VARCHAR(100),
+    salary DECIMAL(10,2)
+);
+
+INSERT INTO Contractors (contractor_name, department, salary)
+SELECT 'Rahul Verma', 'IT', 50000.00
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM Contractors
+    WHERE contractor_name = 'Rahul Verma'
+      AND department = 'IT'
+      AND salary = 50000.00
+);
+
+-- =========================
 -- 8. BLOCKED OPERATIONS
 -- =========================
 CREATE TABLE IF NOT EXISTS Blocked_Operations (

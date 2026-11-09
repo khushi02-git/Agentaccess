@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Any, Optional
 
 
@@ -43,6 +43,35 @@ class AuthorizationResponse(BaseModel):
 class QueryRequest(BaseModel):
     agent_id: int
     query: str
+
+
+class EntityResolutionRequest(BaseModel):
+    agent_id: int
+    request: str = Field(min_length=1, max_length=2000)
+
+
+class EntitySelectionRequest(BaseModel):
+    agent_id: int
+    table_name: str
+    id_column: str
+    record_id: int
+    display_name: Optional[str] = None
+    data: Optional[dict[str, Any]] = None
+
+
+class EntityResolutionMatch(BaseModel):
+    table_name: str = Field(min_length=1)
+    id_column: str = Field(min_length=1)
+    record_id: int
+    display_name: str = Field(min_length=1)
+    data: dict[str, Any]
+
+
+class EntityResolutionResponse(BaseModel):
+    status: str
+    message: Optional[str] = None
+    match: Optional[EntityResolutionMatch] = None
+    matches: list[EntityResolutionMatch] = Field(default_factory=list)
 
 
 class QueryValidationResponse(BaseModel):

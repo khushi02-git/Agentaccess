@@ -3,7 +3,12 @@ import { Bot } from "lucide-react";
 import { FoldedCard, FoldedCardFold, FoldedCardBorder } from "../components/ui/folded-card";
 import StatusBadge from "../components/StatusBadge";
 import { agent, permissionProfiles } from "../data/agent";
-import { executeQuery, generateSql } from "../lib/api";
+import {
+    executeQuery,
+    generateSql,
+    recordEntitySelection,
+    resolveEntity,
+} from "../lib/api";
 import { formatTime } from "../lib/utils";
 
 const DEMO_AGENT_ID = 1;
@@ -30,6 +35,9 @@ export default function Agent() {
     const [execution, setExecution] = useState(null);
     const [executionError, setExecutionError] = useState("");
     const [executing, setExecuting] = useState(false);
+    const [entityResolution, setEntityResolution] = useState(null);
+    const [entityResolutionError, setEntityResolutionError] = useState("");
+    const [selectedMatchId, setSelectedMatchId] = useState(null);
 
     const handleRequestChange = (event) => {
         setRequest(event.target.value);
@@ -37,6 +45,16 @@ export default function Agent() {
         setGenerationError("");
         setExecution(null);
         setExecutionError("");
+        setEntityResolution(null);
+        setEntityResolutionError("");
+        setSelectedMatchId(null);
+    };
+
+    const generateSqlForRequest = async (requestText, match = null) => {
+        const generationRequest = match
+            ? `${requestText}\n\nThe user selected this record:\ntable_name = ${match.table_name}\nid_column = ${match.id_column}\nrecord_id = ${match.record_id}\ndisplay_name = ${match.display_name}\ndata = ${JSON.stringify(match.data)}\nUse this selected record for the SQL operation.`
+            : requestText;
+        setGeneration(await generateSql(generationRequest));
     };
 
     const handleGenerate = async (event) => {
@@ -46,9 +64,55 @@ export default function Agent() {
         setGenerationError("");
         setExecution(null);
         setExecutionError("");
+        setEntityResolution(null);
+        setEntityResolutionError("");
+        setSelectedMatchId(null);
 
         try {
-            setGeneration(await generateSql(request.trim()));
+            const resolution = await resolveEntity(DEMO_AGENT_ID, request.trim());
+            setEntityResolution(resolution);
+
+            if (resolution.status === "not_required") {
+                await generateSqlForRequest(request.trim());
+                return;
+            }
+
+            if (resolution.status === "multiple_matches") {
+                setGeneration(null);
+                return;
+            }
+
+            if (resolution.status === "no_match") {
+                setGeneration(null);
+                return;
+            }
+
+            if (resolution.status === "single_match") {
+                setSelectedMatchId(`${resolution.match.table_name}:${resolution.match.record_id}`);
+                await generateSqlForRequest(request.trim(), resolution.match);
+                return;
+            }
+
+            await generateSqlForRequest(request.trim());
+        } catch (error) {
+            setGenerationError(error.message);
+        } finally {
+            setGenerating(false);
+        }
+    };
+
+    const handleSelectMatch = async (match) => {
+        setSelectedMatchId(`${match.table_name}:${match.record_id}`);
+        setEntityResolutionError("");
+        setGeneration(null);
+        setGenerationError("");
+        setExecution(null);
+        setExecutionError("");
+        setGenerating(true);
+
+        try {
+            const selected = await recordEntitySelection(DEMO_AGENT_ID, match);
+            await generateSqlForRequest(request.trim(), selected);
         } catch (error) {
             setGenerationError(error.message);
         } finally {
@@ -89,6 +153,15 @@ export default function Agent() {
         generation.executed === false &&
         !generating &&
         !executing;
+
+    const selectedMatch =
+        entityResolution?.matches?.find(
+            (match) => `${match.table_name}:${match.record_id}` === selectedMatchId
+        ) ??
+        (entityResolution?.status === "single_match" &&
+        `${entityResolution.match.table_name}:${entityResolution.match.record_id}` === selectedMatchId
+            ? entityResolution.match
+            : null);
 
     return (
         <div className="space-y-6">
@@ -151,10 +224,61 @@ export default function Agent() {
                     </button>
                 </form>
 
+                {entityResolutionError && (
+                    <p role="alert" className="rounded-md border border-red-500/50 bg-red-500/10 p-3 text-sm text-red-400">
+                        {entityResolutionError}
+                    </p>
+                )}
+
                 {generationError && (
                     <p role="alert" className="rounded-md border border-red-500/50 bg-red-500/10 p-3 text-sm text-red-400">
                         {generationError}
                     </p>
+                )}
+
+                {entityResolution?.status === "no_match" && (
+                    <p className="rounded-md border border-border bg-black/30 p-3 text-sm text-muted-foreground">
+                        {entityResolution.message || "No matching record found."}
+                    </p>
+                )}
+
+                {entityResolution?.status === "multiple_matches" && (
+                    <div className="space-y-3 rounded-md border border-amber-500/50 bg-amber-500/10 p-3">
+                        <p className="text-sm font-medium">Multiple matching records found</p>
+                        <p className="text-xs text-muted-foreground">Please select the record you mean before executing.</p>
+                        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                            {entityResolution.matches.map((match) => {
+                                const isSelected = `${match.table_name}:${match.record_id}` === selectedMatchId;
+                                return (
+                                    <div
+                                        key={`${match.table_name}:${match.record_id}`}
+                                        className={`rounded-md border p-3 ${isSelected ? "border-primary bg-accent/20" : "border-border bg-card"}`}
+                                    >
+                                        <div className="text-xs text-muted-foreground">{match.table_name}</div>
+                                        <div className="mt-1 text-sm font-medium">ID: {match.record_id}</div>
+                                        <div className="mt-1 text-sm">{match.display_name}</div>
+                                        <div className="mt-1 text-xs text-muted-foreground">
+                                            {JSON.stringify(match.data)}
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleSelectMatch(match)}
+                                            disabled={generating}
+                                            className="mt-3 h-8 rounded-md border border-primary/40 px-3 text-xs font-medium text-primary"
+                                        >
+                                            {isSelected ? "Selected" : "Select"}
+                                        </button>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+
+                {selectedMatch && generation && (
+                    <div className="rounded-md border border-primary/40 bg-accent/20 p-3 text-xs text-muted-foreground">
+                        Selected record: {selectedMatch.table_name} · ID {selectedMatch.record_id} · {selectedMatch.display_name}
+                    </div>
                 )}
 
                 {generation && (

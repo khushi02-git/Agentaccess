@@ -65,6 +65,63 @@ export async function generateSql(request) {
   return payload;
 }
 
+export async function resolveEntity(agentId, request) {
+  const payload = await postJson("/query/resolve-entity", {
+    agent_id: agentId,
+    request,
+  });
+  const isMatch = (match) =>
+    match !== null &&
+    typeof match === "object" &&
+    typeof match.table_name === "string" &&
+    typeof match.id_column === "string" &&
+    Number.isInteger(match.record_id) &&
+    typeof match.display_name === "string" &&
+    match.data !== null &&
+    typeof match.data === "object" &&
+    !Array.isArray(match.data);
+  if (
+    !["not_required", "no_match", "single_match", "multiple_matches"].includes(payload.status) ||
+    !Array.isArray(payload.matches) ||
+    !payload.matches.every(isMatch) ||
+    (payload.status === "single_match" && !isMatch(payload.match)) ||
+    (payload.message !== undefined &&
+      payload.message !== null &&
+      typeof payload.message !== "string")
+  ) {
+    throw new Error("The backend returned an invalid entity resolution response.");
+  }
+  return payload;
+}
+
+export async function recordEntitySelection(agentId, match) {
+  const payload = await postJson("/query/resolve-entity/selection", {
+    agent_id: agentId,
+    table_name: match.table_name,
+    id_column: match.id_column,
+    record_id: match.record_id,
+    display_name: match.display_name,
+    data: match.data,
+  });
+  const selected = payload.match;
+  if (
+    payload.success !== true ||
+    typeof payload.message !== "string" ||
+    selected === null ||
+    typeof selected !== "object" ||
+    typeof selected.table_name !== "string" ||
+    typeof selected.id_column !== "string" ||
+    !Number.isInteger(selected.record_id) ||
+    typeof selected.display_name !== "string" ||
+    selected.data === null ||
+    typeof selected.data !== "object" ||
+    Array.isArray(selected.data)
+  ) {
+    throw new Error("The backend returned an invalid entity-selection response.");
+  }
+  return selected;
+}
+
 export async function executeQuery(agentId, query) {
   const payload = await postJson("/query/execute", {
     agent_id: agentId,

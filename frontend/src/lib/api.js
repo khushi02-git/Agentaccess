@@ -48,8 +48,8 @@ export async function login(username, password) {
   return payload;
 }
 
-export async function generateSql(request) {
-  const payload = await postJson("/gemini/generate", { request });
+export async function generateSql(request,agentId) {
+  const payload = await postJson("/gemini/generate", { request, agent_id: agentId});
   const validation = payload.validation;
   if (
     typeof payload.generated_sql !== "string" ||

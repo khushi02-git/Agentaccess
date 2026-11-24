@@ -5,18 +5,22 @@ from pydantic import BaseModel, Field
 from backend.services.audit_service import append_audit_event
 from backend.services.gemini_service import generate_sql
 from backend.services.query_service import validate_query
-
+from backend.services.os_limits_service import AgentBlocked, AgentBusy, run_with_limits
 router = APIRouter(prefix="/gemini", tags=["Gemini AI"])
 
 
 class GeminiRequest(BaseModel):
     request: str = Field(min_length=1, max_length=2000)
-
+    agent_id: int                                   
 import logging
 @router.post("/generate")
 def generate(request: GeminiRequest):
     try:
-        sql = generate_sql(request.request)
+        sql = run_with_limits(request.agent_id, lambda: generate_sql(request.request))
+    except AgentBlocked as exc:
+        raise HTTPException(status_code=403, detail=str(exc))
+    except AgentBusy as exc:
+        raise HTTPException(status_code=429, detail=str(exc))
     except RuntimeError as exc:
         append_audit_event(
             "GEMINI",

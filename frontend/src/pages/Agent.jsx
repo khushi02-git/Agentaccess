@@ -54,7 +54,7 @@ export default function Agent() {
         const generationRequest = match
             ? `${requestText}\n\nThe user selected this record:\ntable_name = ${match.table_name}\nid_column = ${match.id_column}\nrecord_id = ${match.record_id}\ndisplay_name = ${match.display_name}\ndata = ${JSON.stringify(match.data)}\nUse this selected record for the SQL operation.`
             : requestText;
-        setGeneration(await generateSql(generationRequest));
+        setGeneration(await generateSql(generationRequest,DEMO_AGENT_ID));
     };
 
     const handleGenerate = async (event) => {
